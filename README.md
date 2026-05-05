@@ -1,32 +1,43 @@
 # Ascii-Terminal-Webcam
-A terminal-base webcam made with Opencv and AsciiMatics base and tasted only with Python 3.7 on mac base terminal.
+
+A terminal-based webcam that renders your live feed as ASCII art, using OpenCV and Asciimatics.
 
 ![](https://github.com/sshlpe/Ascii-Terminal-Webcam/blob/main/assets/rezise_example.gif)
 
+## Requirements
+
+- [uv](https://docs.astral.sh/uv/) (handles Python and dependencies)
 
 ## Install
-clone the repository and install dependencies.
 
 ```
 git clone https://github.com/sshlpe/Ascii-Terminal-Webcam.git
 cd Ascii-Terminal-Webcam
-pip3 install -r requirements.txt
+uv sync
 ```
 
 ## Use
-To use just run on terminal for normal use
+
 ```
-python3 webcam.py
+python webcam.py
 ```
-or if you want inverted brightness. You can also press 'r' on any time to invert the brightness.
+
+To start with inverted brightness (can also toggle by pressing `r` at any time):
+
 ```
-python3 webcam.py -r 
+python webcam.py -r
 ```
+
+## Controls
+
+| Key | Action |
+|-----|--------|
+| `q` | Quit |
+| `r` | Invert brightness |
+| `c` | Save a capture to the `captures/` folder |
 
 ## Notes
 
-- The webcam with adjust to the terminal size, even when resizing it after the program start.
-- Pressing 'q' on any point quits the program.
-- Pressing 'r' on any point inverts the grays scale.
-- Pressing 'c' saves a capture of the webcam on the "captures" folder, these will be overwrite when you run the program again, so if you want to keep them move them to another folder.
-- The Fps depends on the size of the terminal.
+- The webcam auto-adjusts to the terminal size, even when resizing after the program starts.
+- Captures are stored in the `captures/` folder and overwritten when you run the program again. Move them elsewhere if you want to keep them.
+- FPS depends on terminal size.

@@ -1,0 +1,14 @@
+[project]
+name = "ascii-terminal-webcam"
+version = "2.0.0"
+description = "A terminal-based webcam that renders your live feed as ASCII art"
+requires-python = ">=3.11"
+dependencies = [
+    "asciimatics>=1.15",
+    "opencv-python>=4.13",
+    "Pillow>=12",
+    "numpy>=2,<3",
+]
+
+[dependency-groups]
+dev = []
