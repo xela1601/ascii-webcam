@@ -1,18 +1,18 @@
 Package: ascii-webcam
-Version: 1.0.1-1
+Version: 1.1.0-1
 Architecture: arm64
 Maintainer: Alexander Schreiner <github@alexander-schreiner.de>
 Installed-Size: 1288
-Filename: pool/main/a/ascii-webcam/ascii-webcam_1.0.1-1_arm64.deb
-Size: 457460
-MD5sum: db558c91f2c6c27dc6e69a3323b325d9
-SHA1: 1ee5df7b0987ed3320fc8d9467465e7d54bfb478
-SHA256: c39e06ed7dd4cdff52adb97ff53d376d4096c67019439fa7de9875c9e5f51673
+Filename: pool/main/a/ascii-webcam/ascii-webcam_1.1.0-1_arm64.deb
+Size: 457900
+MD5sum: 51c8479d01fb09338df6ea86620d267c
+SHA1: af26a10cf4e7a0147c89084153d1acce0f09622a
+SHA256: c31c516bec945c1a10c80d998c57e095d98036e7b0021268df5eda80de29af1c
 Section: video
 Priority: optional
 Homepage: https://github.com/xela1601/ascii-webcam
 Description: A terminal-based webcam that renders your live feed as colored ASCII art
- # Ascii-Terminal-Webcam
+ # ascii-webcam
  .
  A terminal-based webcam that renders your live feed as colored ASCII art,
  written in Rust for maximum performance.
@@ -88,7 +88,6 @@ Description: A terminal-based webcam that renders your live feed as colored ASCI
  | `q`, `Ctrl+C` | Quit |
  | `r` | Toggle brightness invert |
  | `m` | Toggle horizontal mirror |
- | `f` | Toggle stretch / fit mode |
  | `c` | Save capture to `captures/` |
  .
  ## Camera permissions
@@ -121,8 +120,6 @@ Description: A terminal-based webcam that renders your live feed as colored ASCI
  - Captures are stored in the `captures/` folder and overwritten when you run
  the program again. Move them elsewhere if you want to keep them.
  - FPS depends on terminal size.
- - Default scaling is **stretch** (full frame, fills terminal). Press `f` for
- **fit** (preserves aspect ratio, centers with padding).
  .
  ## Homebrew tap
  .
