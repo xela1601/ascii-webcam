@@ -155,7 +155,10 @@ fn main() {
                 };
 
                 let art_rows = th.saturating_sub(1).max(1);
-                let video_aspect = fw as f64 / fh as f64;
+                // Character cells are taller than wide (~2:1).  Compensate
+                // in the render area so camera pixels don't look stretched.
+                const CHAR_ASPECT: f64 = 0.5;
+                let video_aspect = fw as f64 / fh as f64 / CHAR_ASPECT;
                 let term_aspect = tw as f64 / art_rows as f64;
 
                 // Fit full video within terminal, preserving aspect ratio.
