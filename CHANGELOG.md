@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-05-07
+
+### Added
+- Character cell aspect-ratio compensation — camera feed no longer appears vertically stretched
+- `-t` / `--transpose` flag and `t` key to swap raw buffer width/height
+- Camera resolution displayed in HUD (`160x120 -> 92x69`)
+
+### Changed
+- Removed fill/stretch mode — always fit-within, preserving aspect ratio and showing the full frame
+- Simplified camera open to use `RequestedFormatType::None` (avoids macOS `AbsoluteHighestResolution` panic)
+- Reordered format strategy fallback for better error recovery
+
+### Fixed
+- Raw buffer transpose for portrait-oriented camera sensors
+- apt sources.list format to use `stable main` distribution
+
 ## [1.0.1] - 2026-05-07
 
 ### Added
@@ -40,5 +56,6 @@ All notable changes to this project will be documented in this file.
 - Python runtime and OpenCV system dependencies
 - `pyfiglet`, `future`, `wcwidth` transitive dependencies
 
+[1.1.0]: https://github.com/xela1601/ascii-webcam/releases/tag/v1.1.0
 [1.0.1]: https://github.com/xela1601/ascii-webcam/releases/tag/v1.0.1
 [1.0.0]: https://github.com/xela1601/ascii-webcam/releases/tag/v1.0.0

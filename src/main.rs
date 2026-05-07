@@ -61,49 +61,22 @@ fn cleanup() {
 
 fn try_open_camera() -> Result<Camera, String> {
     let index = CameraIndex::Index(0);
-
-    let strategies = [
-        RequestedFormatType::AbsoluteHighestResolution,
-        RequestedFormatType::None,
-        RequestedFormatType::AbsoluteHighestFrameRate,
-    ];
-
-    let mut last_err = String::new();
-    for &strategy in &strategies {
-        let requested = RequestedFormat::new::<RgbFormat>(strategy);
-        match panic::catch_unwind(|| Camera::new(index.clone(), requested)) {
-            Err(_) => {
-                last_err = "Camera refused format (macOS permission or unsupported mode).".into();
-                continue;
+    let requested = RequestedFormat::new::<RgbFormat>(RequestedFormatType::None);
+    match panic::catch_unwind(|| Camera::new(index, requested)) {
+        Err(_) => Err("Camera access denied. Grant permission in System Settings > Privacy & Security > Camera, then restart your terminal.".into()),
+        Ok(Ok(mut cam)) => match cam.open_stream() {
+            Ok(()) => Ok(cam),
+            Err(e) => {
+                let hint = if format!("{:#?}", e).contains("No such file") || format!("{:#?}", e).contains("V4L2") {
+                    "No camera detected. Is one connected?"
+                } else {
+                    "Check camera permissions."
+                };
+                Err(format!("Could not open camera. {hint}\n{:#?}", e))
             }
-            Ok(Ok(mut cam)) => match cam.open_stream() {
-                Ok(()) => return Ok(cam),
-                Err(e) => {
-                    last_err = format!("{:#?}", e);
-                    continue;
-                }
-            },
-            Ok(Err(e)) => {
-                last_err = format!("{:#?}", e);
-                continue;
-            }
-        }
+        },
+        Ok(Err(e)) => Err(format!("Could not open camera: {:#?}", e)),
     }
-
-    let hint = if last_err.contains("Permission denied")
-        || last_err.contains("authorization")
-        || last_err.contains("Not authorized")
-    {
-        "Check camera permissions."
-    } else if last_err.contains("No such file") || last_err.contains("V4L2") {
-        "No camera detected. Is one connected?"
-    } else if last_err.contains("refused format") {
-        "Try granting camera access in System Settings. If already granted, the highest resolution may not be supported."
-    } else {
-        ""
-    };
-
-    Err(format!("Could not open camera. {hint}\n{last_err}"))
 }
 
 fn main() {
