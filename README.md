@@ -107,3 +107,15 @@ The workflow will build both architectures, create the GitHub Release, and push 
 ```
 git tag v1.0.0 && git push origin v1.0.0
 ```
+
+## Releasing
+
+Releases are driven by **semver tags** and **[git-cliff](https://git-cliff.org)** for changelogs.
+
+1. Write [conventional commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `refactor:` etc.)
+2. Bump the version in `Cargo.toml`
+3. Tag and push:
+   ```
+   git tag v1.3.0 && git push origin v1.3.0
+   ```
+4. The workflow builds all architectures, generates the changelog with `git-cliff`, and publishes the release
