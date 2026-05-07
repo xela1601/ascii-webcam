@@ -28,12 +28,15 @@ struct Args {
     mirror: bool,
     #[arg(short = 't', long, help = "Transpose raw buffer (swap width/height)")]
     transpose: bool,
+    #[arg(short = 'b', long, help = "Black & white mode")]
+    bw: bool,
 }
 
 struct App {
     invert: bool,
     mirror: bool,
     transpose: bool,
+    bw: bool,
     lut: [char; 256],
     frame_count: u64,
     capture_index: u32,
@@ -61,6 +64,7 @@ fn handle_input(app: &mut App) -> bool {
                 }
                 KeyCode::Char('m') => app.mirror = !app.mirror,
                 KeyCode::Char('t') => app.transpose = !app.transpose,
+                KeyCode::Char('b') => app.bw = !app.bw,
                 KeyCode::Char('c') => {
                     if !app.last_frame_plain.is_empty() {
                         let path = format!(
@@ -87,6 +91,7 @@ fn main() {
         invert: args.invert,
         mirror: args.mirror,
         transpose: args.transpose,
+        bw: args.bw,
         lut: render::build_lut(args.invert),
         frame_count: 0,
         capture_index: 0,
