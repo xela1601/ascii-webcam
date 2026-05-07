@@ -1,13 +1,13 @@
 Package: ascii-webcam
-Version: 1.1.1-1
+Version: 1.2.0-1
 Architecture: arm64
 Maintainer: Alexander Schreiner <github@alexander-schreiner.de>
 Installed-Size: 1288
-Filename: pool/main/a/ascii-webcam/ascii-webcam_1.1.1-1_arm64.deb
-Size: 457600
-MD5sum: 84cdeea22a47114d06312772690d49dc
-SHA1: e1809326c3faf01a124f5f079728bf3072d5efa7
-SHA256: e5d333e4027e0d706ea5a659b181aae083932b34bda0fc09101d49dde7cf0482
+Filename: pool/main/a/ascii-webcam/ascii-webcam_1.2.0-1_arm64.deb
+Size: 458500
+MD5sum: 5d34652c14d7b44b4f49ead2d2646c30
+SHA1: 73fd00ff20876160cfaa8b1c22e4431bf2bbd283
+SHA256: 647718fedc651146932cb1a65a0830d3ba7709e02fa3eaa980e4f541d5b3b415
 Section: video
 Priority: optional
 Homepage: https://github.com/xela1601/ascii-webcam
