@@ -12,7 +12,6 @@ use crossterm::{
     execute,
     terminal::{self},
 };
-use nokhwa::pixel_format::RgbFormat;
 
 const FRAME_SLEEP: Duration = Duration::from_micros(100);
 
@@ -117,16 +116,10 @@ fn main() {
         let term_w = term_cols as u32;
         let term_h = term_rows as u32;
 
-        if let Ok(frame) = camera.frame() {
-            if let Ok(decoded) = frame.decode_image::<RgbFormat>() {
-                let raw = decoded.as_raw();
-                let (orig_w, orig_h) = (decoded.width(), decoded.height());
-
-                let output = render::render(raw, orig_w, orig_h, &mut app, term_w, term_h);
-
-                write!(stdout, "{}", output.ansi).unwrap();
-                stdout.flush().unwrap();
-            }
+        if let Some(frame) = camera.next_frame() {
+            let output = render::render(&frame.rgb, frame.width, frame.height, &mut app, term_w, term_h);
+            write!(stdout, "{}", output.ansi).unwrap();
+            stdout.flush().unwrap();
         }
 
         if !handle_input(&mut app) {

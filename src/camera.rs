@@ -1,15 +1,41 @@
 use std::panic;
 
 use nokhwa::{
-    pixel_format::RgbFormat,
+    pixel_format::{RgbFormat, YuyvFormat},
     utils::{CameraIndex, RequestedFormat, RequestedFormatType},
     Camera,
 };
 
-pub fn open() -> Result<Camera, String> {
-    let index = CameraIndex::Index(0);
-    let requested = RequestedFormat::new::<RgbFormat>(RequestedFormatType::None);
-    match panic::catch_unwind(|| Camera::new(index, requested)) {
+pub struct Frame {
+    pub rgb: Vec<u8>,
+    pub width: u32,
+    pub height: u32,
+}
+
+pub struct Cam {
+    cam: Camera,
+    is_yuyv: bool,
+}
+
+pub fn open() -> Result<Cam, String> {
+    let idx = CameraIndex::Index(0);
+
+    let rgb_req = RequestedFormat::new::<RgbFormat>(RequestedFormatType::None);
+    match try_open(idx.clone(), rgb_req) {
+        Ok(cam) => return Ok(Cam { cam, is_yuyv: false }),
+        Err(_) => {}
+    }
+
+    let yuyv_req = RequestedFormat::new::<YuyvFormat>(RequestedFormatType::None);
+    Ok(Cam { cam: try_open(idx, yuyv_req)?, is_yuyv: true })
+}
+
+fn try_open(
+    idx: CameraIndex,
+    requested: impl Into<nokhwa::utils::RequestedFormat<'static>>,
+) -> Result<Camera, String> {
+    let req: nokhwa::utils::RequestedFormat = requested.into();
+    match panic::catch_unwind(|| Camera::new(idx, req)) {
         Err(_) => Err("Camera access denied. Grant permission in System Settings > Privacy & Security > Camera, then restart your terminal.".into()),
         Ok(Ok(mut cam)) => match cam.open_stream() {
             Ok(()) => Ok(cam),
@@ -17,6 +43,48 @@ pub fn open() -> Result<Camera, String> {
         },
         Ok(Err(e)) => Err(format_msg(e)),
     }
+}
+
+impl Cam {
+    pub fn next_frame(&mut self) -> Option<Frame> {
+        let buffer = self.cam.frame().ok()?;
+        if self.is_yuyv {
+            let w = buffer.resolution().width();
+            let h = buffer.resolution().height();
+            let rgb = yuyv_to_rgb(buffer.buffer(), w, h);
+            Some(Frame { rgb, width: w, height: h })
+        } else {
+            let decoded = buffer.decode_image::<RgbFormat>().ok()?;
+            let width = decoded.width();
+            let height = decoded.height();
+            Some(Frame { rgb: decoded.into_raw(), width, height })
+        }
+    }
+}
+
+fn yuyv_to_rgb(yuv: &[u8], w: u32, h: u32) -> Vec<u8> {
+    let len = (w * h * 3) as usize;
+    let mut rgb = vec![0u8; len];
+    for y in 0..h {
+        for x in (0..w).step_by(2) {
+            let i = ((y * w + x) * 2) as usize;
+            let y0 = yuv[i] as f64;
+            let u  = yuv[i + 1] as f64 - 128.0;
+            let y1 = yuv[i + 2] as f64;
+            let v  = yuv[i + 3] as f64 - 128.0;
+
+            let out0 = ((y * w + x) * 3) as usize;
+            rgb[out0]     = (y0 + 1.402 * v).clamp(0.0, 255.0) as u8;
+            rgb[out0 + 1] = (y0 - 0.344 * u - 0.714 * v).clamp(0.0, 255.0) as u8;
+            rgb[out0 + 2] = (y0 + 1.772 * u).clamp(0.0, 255.0) as u8;
+
+            let out1 = ((y * w + x + 1) * 3) as usize;
+            rgb[out1]     = (y1 + 1.402 * v).clamp(0.0, 255.0) as u8;
+            rgb[out1 + 1] = (y1 - 0.344 * u - 0.714 * v).clamp(0.0, 255.0) as u8;
+            rgb[out1 + 2] = (y1 + 1.772 * u).clamp(0.0, 255.0) as u8;
+        }
+    }
+    rgb
 }
 
 pub fn format_msg(e: impl std::fmt::Debug) -> String {
