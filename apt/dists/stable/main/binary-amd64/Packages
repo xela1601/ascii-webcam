@@ -1,0 +1,135 @@
+Package: ascii-webcam
+Version: 1.0.0-1
+Architecture: amd64
+Maintainer: Alexander Schreiner <github@alexander-schreiner.de>
+Installed-Size: 1313
+Filename: pool/main/a/ascii-webcam/ascii-webcam_1.0.0-1_amd64.deb
+Size: 488456
+MD5sum: 5bfdd7411f76f8adf13ca592223b1de9
+SHA1: a6e63117ff5d3dc7866e3ef214dc87c88365e89b
+SHA256: cf0e190180bd518b9138a5183420f2d7996c530ba0ee352123011ddfd3839dca
+Section: video
+Priority: optional
+Homepage: https://github.com/xela1601/ascii-webcam
+Description: A terminal-based webcam that renders your live feed as colored ASCII art
+ # Ascii-Terminal-Webcam
+ .
+ A terminal-based webcam that renders your live feed as colored ASCII art,
+ written in Rust for maximum performance.
+ .
+ ## Install
+ .
+ ### Homebrew (macOS, arm64 and x86_64)
+ .
+ Add the tap, then install:
+ .
+ ```
+ brew tap xela1601/tap
+ brew install ascii-webcam
+ ```
+ .
+ > The tap formula is auto-updated on each releas
+ .
+ ### apt (Debian / Ubuntu, amd64)
+ .
+ ```
+ echo "deb [trusted=yes] https://xela1601.github.io/ascii-webcam/apt ./" | \
+   sudo tee /etc/apt/sources.list.d/ascii-webcam.list
+ sudo apt update
+ sudo apt install ascii-webcam
+ ```
+ .
+ ### Cargo
+ .
+ ```
+ cargo install --git https://github.com/xela1601/ascii-webcam.git
+ ```
+ .
+ ### From source
+ .
+ ```
+ git clone https://github.com/xela1601/ascii-webcam.git
+ cd ascii-webcam
+ cargo build --release
+ ```
+ .
+ ### With mise
+ .
+ If you use [mise](https://mise.jdx.dev/), the `.mise.toml` bootstraps the
+ correct Rust version:
+ .
+ ```
+ mise install
+ mise run build
+ ```
+ .
+ ## Use
+ .
+ ```
+ ascii-webcam
+ ```
+ .
+ Or during development:
+ .
+ ```
+ cargo run --release
+ ```
+ .
+ | Flag | Description |
+ |------|-------------|
+ | `-r`, `--invert` | Start with inverted brightness |
+ | `-m`, `--mirror`  | Start with horizontal mirror |
+ .
+ ## Controls
+ .
+ | Key | Action |
+ |-----|--------|
+ | `q`, `Ctrl+C` | Quit |
+ | `r` | Toggle brightness invert |
+ | `m` | Toggle horizontal mirror |
+ | `f` | Toggle stretch / fit mode |
+ | `c` | Save capture to `captures/` |
+ .
+ ## Camera permissions
+ .
+ ### macOS
+ .
+ macOS requires apps to be granted camera access. If the webcam doesn't open,
+ allow your terminal app in **System Settings > Privacy & Security > Camera**
+ and restart the app. If you're using VS Code's integrated terminal, VS Code
+ itself needs the permission. If it's already listed and still fails, try:
+ .
+ ```
+ tccutil reset Camera
+ ```
+ .
+ ### Linux
+ .
+ Ensure your user is in the `video` group:
+ .
+ ```
+ sudo usermod -a -G video $USER
+ ```
+ .
+ Log out and back in for the change to take effect.
+ .
+ ## Notes
+ .
+ - The webcam auto-adjusts to the terminal size, even when resizing after the
+ program starts.
+ - Captures are stored in the `captures/` folder and overwritten when you run
+ the program again. Move them elsewhere if you want to keep them.
+ - FPS depends on terminal size.
+ - Default scaling is **stretch** (full frame, fills terminal). Press `f` for
+ **fit** (preserves aspect ratio, centers with padding).
+ .
+ ## Homebrew tap
+ .
+ Is created automatically via workflow, when a semver tag is pushed.
+ The workflow will build both architectures, create the GitHub Release, and push
+ the formula to https://github.com/xela1601/homebrew-tap.
+ .
+ ```
+ git tag v1.0.0 && git push origin v1.0.0
+ ```
+
