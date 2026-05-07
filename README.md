@@ -18,7 +18,7 @@ brew install ascii-webcam
 ### apt (Debian / Ubuntu, amd64 and arm64)
 
 ```
-echo "deb [trusted=yes] https://xela1601.github.io/ascii-webcam/apt ./" | \
+echo "deb [trusted=yes] https://xela1601.github.io/ascii-webcam/apt stable main" | \
   sudo tee /etc/apt/sources.list.d/ascii-webcam.list
 sudo apt update
 sudo apt install ascii-webcam
