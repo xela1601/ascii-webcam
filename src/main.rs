@@ -66,16 +66,25 @@ fn try_open_camera() -> Result<Camera, String> {
         Err(_) => Err("Camera access denied. Grant permission in System Settings > Privacy & Security > Camera, then restart your terminal.".into()),
         Ok(Ok(mut cam)) => match cam.open_stream() {
             Ok(()) => Ok(cam),
-            Err(e) => {
-                let hint = if format!("{:#?}", e).contains("No such file") || format!("{:#?}", e).contains("V4L2") {
-                    "No camera detected. Is one connected?"
-                } else {
-                    "Check camera permissions."
-                };
-                Err(format!("Could not open camera. {hint}\n{:#?}", e))
-            }
+            Err(e) => Err(camera_error_msg(e)),
         },
-        Ok(Err(e)) => Err(format!("Could not open camera: {:#?}", e)),
+        Ok(Err(e)) => Err(camera_error_msg(e)),
+    }
+}
+
+fn camera_error_msg(e: impl std::fmt::Debug) -> String {
+    let s = format!("{:#?}", e);
+    let hint = if s.contains("No such file") || s.contains("V4L2") {
+        "No camera detected. Is one connected?"
+    } else if s.contains("Permission") || s.contains("authorization") || s.contains("Not authorized") {
+        "Check camera permissions."
+    } else {
+        ""
+    };
+    if hint.is_empty() {
+        format!("Could not open camera.\n{s}")
+    } else {
+        format!("Could not open camera.\n{hint}\n{s}")
     }
 }
 
