@@ -1,0 +1,10 @@
+[package]
+name = "ascii-webcam"
+version = "1.0.0"
+edition = "2021"
+description = "A terminal-based webcam that renders your live feed as colored ASCII art"
+
+[dependencies]
+nokhwa = { version = "0.10", features = ["input-avfoundation", "input-v4l"] }
+crossterm = "0.28"
+clap = { version = "4", features = ["derive"] }
