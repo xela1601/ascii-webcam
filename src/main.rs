@@ -1,7 +1,6 @@
 use std::fs;
 use std::io::{self, Write};
 use std::panic;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use clap::Parser;
@@ -133,14 +132,7 @@ fn main() {
                 let raw = decoded.as_raw();
                 let (orig_w, orig_h) = (decoded.width(), decoded.height());
 
-                // Print camera info once
-                static REPORTED: AtomicBool = AtomicBool::new(false);
-                if !REPORTED.swap(true, Ordering::Relaxed) {
-                    eprintln!(
-                        "Camera: {orig_w}x{orig_h} (aspect {:.2})",
-                        orig_w as f64 / orig_h as f64
-                    );
-                }
+                let cam_label = format!("{orig_w}x{orig_h}");
 
                 // Auto-rotate portrait cameras to landscape
                 let rotated = orig_w < orig_h;
@@ -223,8 +215,8 @@ fn main() {
                 let hud = format!(
                     "\x1b[{hud_row};1H\x1b[48;2;30;30;30m\x1b[38;2;180;180;180m\
                      {fps_text}\
-                     ┃ {mirror_label}{invert_label} ┃ \
-                     q:quit  r:inv  m:mir  c:capture\
+                     ┃ {mirror_label}{invert_label} ┃ {cam_label} -> {rw}x{rh} \
+                     ┃ q:quit  r:inv  m:mir  c:capture\
                      \x1b[K\x1b[0m",
                     hud_row = th,
                 );
