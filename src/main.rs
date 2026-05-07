@@ -29,6 +29,8 @@ struct Args {
     invert: bool,
     #[arg(short = 'm', long, help = "Mirror horizontally")]
     mirror: bool,
+    #[arg(short = 't', long, help = "Transpose raw buffer (swap width/height)")]
+    transpose: bool,
 }
 
 fn build_lut(invert: bool) -> [char; 256] {
@@ -109,6 +111,7 @@ fn main() {
 
     let mut invert = args.invert;
     let mut mirror = args.mirror;
+    let mut transpose = args.transpose;
     let mut lut = build_lut(invert);
 
     let mut camera = match try_open_camera() {
@@ -143,12 +146,12 @@ fn main() {
 
                 let cam_label = format!("{orig_w}x{orig_h}");
 
-                // Auto-rotate portrait cameras to landscape
-                let rotated = orig_w < orig_h;
-                let (fw, fh) = if rotated {
-                    (orig_h, orig_w)
+                // Apply transpose flag or auto-rotate portrait cameras
+                let transposed = transpose || orig_w < orig_h;
+                let (fw, fh, buf_w) = if transposed {
+                    (orig_h, orig_w, orig_w)
                 } else {
-                    (orig_w, orig_h)
+                    (orig_w, orig_h, orig_w)
                 };
 
                 let art_rows = th.saturating_sub(1).max(1);
@@ -198,10 +201,9 @@ fn main() {
                         for x in 0..rw {
                             let src_x = ((x as f64 * scale_x) as u32).min(fw.saturating_sub(1));
                             let sx = if mirror { fw - 1 - src_x } else { src_x };
-                            let idx = if rotated {
-                                // 90° CW rotation; mirror flips the new x-axis
-                                let ry = if mirror { orig_h - 1 - src_x } else { src_x };
-                                ((ry as u32 * orig_w + (orig_w - 1 - src_y as u32)) * 3) as usize
+                            let idx = if transposed {
+                                // src_x -> original row, src_y -> original col
+                                ((src_x * buf_w + src_y as u32) * 3) as usize
                             } else {
                                 (src_y as u32 * fw + sx) as usize * 3
                             };
@@ -220,12 +222,13 @@ fn main() {
                 // HUD bar
                 let mirror_label = if mirror { "M" } else { " " };
                 let invert_label = if invert { "I" } else { " " };
+                let transpose_label = if transposed { "T" } else { " " };
                 let fps_text = format!(" {fps:3} FPS ");
                 let hud = format!(
                     "\x1b[{hud_row};1H\x1b[48;2;30;30;30m\x1b[38;2;180;180;180m\
                      {fps_text}\
-                     ┃ {mirror_label}{invert_label} ┃ {cam_label} -> {rw}x{rh} \
-                     ┃ q:quit  r:inv  m:mir  c:capture\
+                     ┃ {mirror_label}{invert_label}{transpose_label} ┃ {cam_label} -> {rw}x{rh} \
+                     ┃ q:quit  r:inv  m:mir  t:trn  c:capture\
                      \x1b[K\x1b[0m",
                     hud_row = th,
                 );
@@ -255,6 +258,9 @@ fn main() {
                     }
                     KeyCode::Char('m') => {
                         mirror = !mirror;
+                    }
+                    KeyCode::Char('t') => {
+                        transpose = !transpose;
                     }
                     KeyCode::Char('c') => {
                         if !ascii_plain.is_empty() {
