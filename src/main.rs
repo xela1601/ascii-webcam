@@ -71,13 +71,20 @@ fn try_open_camera() -> Result<Camera, String> {
         let requested = RequestedFormat::new::<RgbFormat>(strategy);
         match panic::catch_unwind(|| Camera::new(index.clone(), requested)) {
             Err(_) => {
-                return Err("Camera access denied. Grant permission in System Settings > Privacy & Security > Camera, then restart your terminal.".into());
+                last_err = "Camera refused format (macOS permission or unsupported mode).".into();
+                continue;
             }
             Ok(Ok(mut cam)) => match cam.open_stream() {
                 Ok(()) => return Ok(cam),
-                Err(e) => last_err = format!("{:#?}", e),
+                Err(e) => {
+                    last_err = format!("{:#?}", e);
+                    continue;
+                }
             },
-            Ok(Err(e)) => last_err = format!("{:#?}", e),
+            Ok(Err(e)) => {
+                last_err = format!("{:#?}", e);
+                continue;
+            }
         }
     }
 
@@ -88,6 +95,8 @@ fn try_open_camera() -> Result<Camera, String> {
         "Check camera permissions."
     } else if last_err.contains("No such file") || last_err.contains("V4L2") {
         "No camera detected. Is one connected?"
+    } else if last_err.contains("refused format") {
+        "Try granting camera access in System Settings. If already granted, the highest resolution may not be supported."
     } else {
         ""
     };
