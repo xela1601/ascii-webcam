@@ -86,7 +86,19 @@ fn try_open_camera() -> Result<Camera, String> {
             Ok(Err(e)) => last_err = format!("{:#?}", e),
         }
     }
-    Err(format!("Could not open camera: {last_err}"))
+
+    let hint = if last_err.contains("Permission denied")
+        || last_err.contains("authorization")
+        || last_err.contains("Not authorized")
+    {
+        "Check camera permissions."
+    } else if last_err.contains("No such file") || last_err.contains("V4L2") {
+        "No camera detected. Is one connected?"
+    } else {
+        ""
+    };
+
+    Err(format!("Could not open camera. {hint}\n{last_err}"))
 }
 
 fn main() {
