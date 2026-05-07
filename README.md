@@ -1,43 +1,100 @@
 # Ascii-Terminal-Webcam
 
-A terminal-based webcam that renders your live feed as ASCII art, using OpenCV and Asciimatics.
-
-![](https://github.com/sshlpe/Ascii-Terminal-Webcam/blob/main/assets/rezise_example.gif)
-
-## Requirements
-
-- [uv](https://docs.astral.sh/uv/) (handles Python and dependencies)
+A terminal-based webcam that renders your live feed as colored ASCII art, written in Rust for maximum performance.
 
 ## Install
 
+### Homebrew (macOS, arm64 and x86_64)
+
+Add the tap, then install:
+
 ```
-git clone https://github.com/sshlpe/Ascii-Terminal-Webcam.git
-cd Ascii-Terminal-Webcam
-uv sync
+brew tap xela1601/tap
+brew install ascii-webcam
+```
+
+> The tap formula is auto-updated on each release. If you haven't created the tap yet,
+> see [below](#setting-up-the-homebrew-tap).
+
+```
+cargo install --git https://github.com/xela1601/ascii-webcam.git
+```
+
+### From source
+
+```
+git clone https://github.com/xela1601/ascii-webcam.git
+cd ascii-webcam
+cargo build --release
+```
+
+### With mise
+
+If you use [mise](https://mise.jdx.dev/), the `.mise.toml` bootstraps the correct Rust version:
+
+```
+mise install
+mise run build
 ```
 
 ## Use
 
 ```
-python webcam.py
+ascii-webcam
 ```
 
-To start with inverted brightness (can also toggle by pressing `r` at any time):
+Or during development:
 
 ```
-python webcam.py -r
+cargo run --release
 ```
+
+| Flag | Description |
+|------|-------------|
+| `-r`, `--invert` | Start with inverted brightness |
+| `-m`, `--mirror`  | Start with horizontal mirror |
 
 ## Controls
 
 | Key | Action |
 |-----|--------|
-| `q` | Quit |
-| `r` | Invert brightness |
-| `c` | Save a capture to the `captures/` folder |
+| `q`, `Ctrl+C` | Quit |
+| `r` | Toggle brightness invert |
+| `m` | Toggle horizontal mirror |
+| `f` | Toggle stretch / fit mode |
+| `c` | Save capture to `captures/` |
+
+## Camera permissions
+
+### macOS
+
+macOS requires apps to be granted camera access. If the webcam doesn't open, allow your terminal app in **System Settings > Privacy & Security > Camera** and restart the app. If you're using VS Code's integrated terminal, VS Code itself needs the permission. If it's already listed and still fails, try:
+
+```
+tccutil reset Camera
+```
+
+### Linux
+
+Ensure your user is in the `video` group:
+
+```
+sudo usermod -a -G video $USER
+```
+
+Log out and back in for the change to take effect.
 
 ## Notes
 
 - The webcam auto-adjusts to the terminal size, even when resizing after the program starts.
 - Captures are stored in the `captures/` folder and overwritten when you run the program again. Move them elsewhere if you want to keep them.
 - FPS depends on terminal size.
+- Default scaling is **stretch** (full frame, fills terminal). Press `f` for **fit** (preserves aspect ratio, centers with padding).
+
+## Setting up the Homebrew tap
+
+Push a semver tag:
+```
+git tag v1.0.0 && git push origin v1.0.0
+```
+The workflow will build both architectures, create the GitHub Release, and push the formula to your tap.

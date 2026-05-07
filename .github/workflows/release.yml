@@ -1,0 +1,122 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target:
+          - aarch64-apple-darwin
+          - x86_64-apple-darwin
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf ../../../ascii-webcam-${{ matrix.target }}.tar.gz ascii-webcam
+          cd ../../..
+          shasum -a 256 ascii-webcam-${{ matrix.target }}.tar.gz > ascii-webcam-${{ matrix.target }}.tar.gz.sha256
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ascii-webcam-${{ matrix.target }}
+          path: |
+            ascii-webcam-${{ matrix.target }}.tar.gz
+            ascii-webcam-${{ matrix.target }}.tar.gz.sha256
+
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Display structure
+        run: ls -R artifacts/
+
+      - name: Read SHA256 sums
+        id: hashes
+        run: |
+          ARM_SHA=$(cat artifacts/ascii-webcam-aarch64-apple-darwin.tar.gz.sha256 | awk '{print $1}')
+          X86_SHA=$(cat artifacts/ascii-webcam-x86_64-apple-darwin.tar.gz.sha256 | awk '{print $1}')
+          echo "arm_sha=$ARM_SHA" >> $GITHUB_OUTPUT
+          echo "x86_sha=$X86_SHA" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: CHANGELOG.md
+          files: artifacts/*.tar.gz
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Homebrew formula in tap
+        env:
+          TAP_REPO: xela1601/homebrew-tap
+          GH_TOKEN: ${{ secrets.TAP_RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          ARM_SHA="${{ steps.hashes.outputs.arm_sha }}"
+          X86_SHA="${{ steps.hashes.outputs.x86_sha }}"
+
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${TAP_REPO}.git" tap-repo
+          cd tap-repo
+          mkdir -p Formula
+
+          cat > Formula/ascii-webcam.rb << EOF
+          class AsciiWebcam < Formula
+            desc "Terminal-based webcam that renders your live feed as colored ASCII art"
+            homepage "https://github.com/xela1601/ascii-webcam"
+            version "$VERSION"
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "https://github.com/xela1601/ascii-webcam/releases/download/$TAG/ascii-webcam-aarch64-apple-darwin.tar.gz"
+                sha256 "$ARM_SHA"
+              else
+                url "https://github.com/xela1601/ascii-webcam/releases/download/$TAG/ascii-webcam-x86_64-apple-darwin.tar.gz"
+                sha256 "$X86_SHA"
+              end
+            end
+
+            def install
+              bin.install "ascii-webcam"
+            end
+
+            test do
+              system "#{bin}/ascii-webcam", "--version"
+            end
+          end
+          EOF
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/ascii-webcam.rb
+          git commit -m "ascii-webcam $TAG" || true
+          git push
