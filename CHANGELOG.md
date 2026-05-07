@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2026-05-07
+
+### Fixed
+- Unified camera error messages — `Camera::new` and `open_stream` errors now both show human-readable hints (no camera, permission denied)
+
 ## [1.1.0] - 2026-05-07
 
 ### Added
@@ -56,6 +61,7 @@ All notable changes to this project will be documented in this file.
 - Python runtime and OpenCV system dependencies
 - `pyfiglet`, `future`, `wcwidth` transitive dependencies
 
+[1.1.1]: https://github.com/xela1601/ascii-webcam/releases/tag/v1.1.1
 [1.1.0]: https://github.com/xela1601/ascii-webcam/releases/tag/v1.1.0
 [1.0.1]: https://github.com/xela1601/ascii-webcam/releases/tag/v1.0.1
 [1.0.0]: https://github.com/xela1601/ascii-webcam/releases/tag/v1.0.0
