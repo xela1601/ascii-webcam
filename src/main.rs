@@ -61,8 +61,8 @@ fn try_open_camera() -> Result<Camera, String> {
     let index = CameraIndex::Index(0);
 
     let strategies = [
-        RequestedFormatType::None,
         RequestedFormatType::AbsoluteHighestResolution,
+        RequestedFormatType::None,
         RequestedFormatType::AbsoluteHighestFrameRate,
     ];
 
