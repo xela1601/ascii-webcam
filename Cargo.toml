@@ -3,6 +3,17 @@ name = "ascii-webcam"
 version = "1.0.0"
 edition = "2021"
 description = "A terminal-based webcam that renders your live feed as colored ASCII art"
+license = "MIT"
+repository = "https://github.com/xela1601/ascii-webcam"
+
+[package.metadata.deb]
+maintainer = "Alexander Schreiner <github@alexander-schreiner.de>"
+depends = ""
+section = "video"
+priority = "optional"
+assets = [
+    ["target/release/ascii-webcam", "usr/bin/", "755"],
+]
 
 [dependencies]
 nokhwa = { version = "0.10", features = ["input-avfoundation", "input-v4l"] }
