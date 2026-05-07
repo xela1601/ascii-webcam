@@ -15,7 +15,7 @@ brew install ascii-webcam
 
 > The tap formula is auto-updated on each releas
 
-### apt (Debian / Ubuntu, amd64)
+### apt (Debian / Ubuntu, amd64 and arm64)
 
 ```
 echo "deb [trusted=yes] https://xela1601.github.io/ascii-webcam/apt ./" | \
