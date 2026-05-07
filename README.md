@@ -1,4 +1,4 @@
-# Ascii-Terminal-Webcam
+# ascii-webcam
 
 A terminal-based webcam that renders your live feed as colored ASCII art, written in Rust for maximum performance.
 
@@ -71,7 +71,6 @@ cargo run --release
 | `q`, `Ctrl+C` | Quit |
 | `r` | Toggle brightness invert |
 | `m` | Toggle horizontal mirror |
-| `f` | Toggle stretch / fit mode |
 | `c` | Save capture to `captures/` |
 
 ## Camera permissions
@@ -99,7 +98,6 @@ Log out and back in for the change to take effect.
 - The webcam auto-adjusts to the terminal size, even when resizing after the program starts.
 - Captures are stored in the `captures/` folder and overwritten when you run the program again. Move them elsewhere if you want to keep them.
 - FPS depends on terminal size.
-- Default scaling is **stretch** (full frame, fills terminal). Press `f` for **fit** (preserves aspect ratio, centers with padding).
 
 ## Homebrew tap
 

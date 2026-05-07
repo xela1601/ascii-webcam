@@ -31,12 +31,6 @@ struct Args {
     mirror: bool,
 }
 
-#[derive(Clone, Copy, PartialEq)]
-enum ScaleMode {
-    Stretch,
-    Fit,
-}
-
 fn build_lut(invert: bool) -> [char; 256] {
     let chars: Vec<char> = if invert {
         GSCALE.chars().rev().collect()
@@ -106,7 +100,6 @@ fn main() {
 
     let mut invert = args.invert;
     let mut mirror = args.mirror;
-    let mut mode = ScaleMode::Stretch;
     let mut lut = build_lut(invert);
 
     let mut camera = match try_open_camera() {
@@ -137,46 +130,33 @@ fn main() {
         if let Ok(frame) = camera.frame() {
             if let Ok(decoded) = frame.decode_image::<RgbFormat>() {
                 let raw = decoded.as_raw();
-                let (fw, fh) = (decoded.width(), decoded.height());
+                let (orig_w, orig_h) = (decoded.width(), decoded.height());
+
+                // Auto-rotate portrait cameras to landscape
+                let rotated = orig_w < orig_h;
+                let (fw, fh) = if rotated {
+                    (orig_h, orig_w)
+                } else {
+                    (orig_w, orig_h)
+                };
 
                 let art_rows = th.saturating_sub(1).max(1);
                 let video_aspect = fw as f64 / fh as f64;
                 let term_aspect = tw as f64 / art_rows as f64;
 
-                // Stretch: scale the full frame to exactly fill the terminal
-                // (no aspect-ratio correction — matches original Python behaviour).
-                // Fit:   largest rectangle preserving aspect ratio, centered.
-                let (rw, rh, ox, oy, crop_x, crop_y, crop_w, crop_h) =
-                    if mode == ScaleMode::Stretch {
-                        (tw, art_rows, 0i32, 0i32, 0, 0, fw, fh)
-                    } else if video_aspect > term_aspect {
-                        let rh = (tw as f64 / video_aspect).round().max(1.0) as u32;
-                        (
-                            tw,
-                            rh,
-                            0,
-                            ((art_rows as i32 - rh as i32) / 2).max(0),
-                            0,
-                            0,
-                            fw,
-                            fh,
-                        )
-                    } else {
-                        let rw = (art_rows as f64 * video_aspect).round().max(1.0) as u32;
-                        (
-                            rw,
-                            art_rows,
-                            ((tw as i32 - rw as i32) / 2).max(0),
-                            0,
-                            0,
-                            0,
-                            fw,
-                            fh,
-                        )
-                    };
+                // Fit full video within terminal, preserving aspect ratio.
+                // The render area is the largest rectangle inside the terminal
+                // that has the same shape as the camera frame — no cropping.
+                let (rw, rh, ox, oy) = if video_aspect > term_aspect {
+                    let rh = (tw as f64 / video_aspect).round().max(1.0) as u32;
+                    (tw, rh, 0i32, ((art_rows as i32 - rh as i32) / 2).max(0))
+                } else {
+                    let rw = (art_rows as f64 * video_aspect).round().max(1.0) as u32;
+                    (rw, art_rows, ((tw as i32 - rw as i32) / 2).max(0), 0i32)
+                };
 
-                let scale_x = crop_w as f64 / rw as f64;
-                let scale_y = crop_h as f64 / rh as f64;
+                let scale_x = fw as f64 / rw as f64;
+                let scale_y = fh as f64 / rh as f64;
 
                 frames += 1;
                 let elapsed = start.elapsed().as_secs_f64();
@@ -203,17 +183,17 @@ fn main() {
 
                     let sy = y as i32 - oy;
                     if sy >= 0 && (sy as u32) < rh {
-                        let src_y = ((crop_y as u32
-                            + (sy as f64 * scale_y) as u32)
-                            .min(fh.saturating_sub(1)))
-                            as u32;
+                        let src_y = ((sy as f64 * scale_y) as u32).min(fh.saturating_sub(1));
                         for x in 0..rw {
-                            let src_x = ((crop_x as u32
-                                + (x as f64 * scale_x) as u32)
-                                .min(fw.saturating_sub(1)))
-                                as u32;
+                            let src_x = ((x as f64 * scale_x) as u32).min(fw.saturating_sub(1));
                             let sx = if mirror { fw - 1 - src_x } else { src_x };
-                            let idx = ((src_y * fw + sx) * 3) as usize;
+                            let idx = if rotated {
+                                // 90° CW rotation; mirror flips the new x-axis
+                                let ry = if mirror { orig_h - 1 - src_x } else { src_x };
+                                ((ry as u32 * orig_w + (orig_w - 1 - src_y as u32)) * 3) as usize
+                            } else {
+                                (src_y as u32 * fw + sx) as usize * 3
+                            };
                             let r = raw[idx];
                             let g = raw[idx + 1];
                             let b = raw[idx + 2];
@@ -227,19 +207,14 @@ fn main() {
                 }
 
                 // HUD bar
-                let mode_label = if mode == ScaleMode::Fit {
-                    "fit"
-                } else {
-                    "str"
-                };
                 let mirror_label = if mirror { "M" } else { " " };
                 let invert_label = if invert { "I" } else { " " };
                 let fps_text = format!(" {fps:3} FPS ");
                 let hud = format!(
                     "\x1b[{hud_row};1H\x1b[48;2;30;30;30m\x1b[38;2;180;180;180m\
                      {fps_text}\
-                     ┃ {mirror_label}{invert_label} ┃ f:mode({mode_label}) \
-                     q:quit  r:inv  m:mir  f:str/fit  c:capture\
+                     ┃ {mirror_label}{invert_label} ┃ \
+                     q:quit  r:inv  m:mir  c:capture\
                      \x1b[K\x1b[0m",
                     hud_row = th,
                 );
@@ -269,13 +244,6 @@ fn main() {
                     }
                     KeyCode::Char('m') => {
                         mirror = !mirror;
-                    }
-                    KeyCode::Char('f') => {
-                        mode = if mode == ScaleMode::Stretch {
-                            ScaleMode::Fit
-                        } else {
-                            ScaleMode::Stretch
-                        };
                     }
                     KeyCode::Char('c') => {
                         if !ascii_plain.is_empty() {
