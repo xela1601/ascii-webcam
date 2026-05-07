@@ -40,39 +40,26 @@ jobs:
             ascii-webcam-${{ matrix.target }}.tar.gz.sha256
 
   build-linux:
-    name: Build .deb ${{ matrix.arch }}
+    name: Build .deb amd64
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - arch: amd64
-            target: x86_64-unknown-linux-gnu
-          - arch: arm64
-            target: aarch64-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - name: Install cross-compilation deps
-        if: matrix.arch == 'arm64'
-        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release
 
       - name: Build .deb package
         run: |
           cargo install cargo-deb
-          cargo deb --target ${{ matrix.target }} --no-build
+          cargo deb --no-build
 
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ascii-webcam-linux-${{ matrix.arch }}
-          path: target/${{ matrix.target }}/debian/ascii-webcam_*.deb
+          name: ascii-webcam-linux-amd64
+          path: target/debian/ascii-webcam_*.deb
 
   release:
     name: Publish release
@@ -161,9 +148,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ github.ref_name }}"
-          VERSION="${TAG#v}"
           DEB_AMD64=$(ls artifacts/ascii-webcam_*_amd64.deb)
-          DEB_ARM64=$(ls artifacts/ascii-webcam_*_arm64.deb)
 
           git fetch origin gh-pages
           git checkout gh-pages
@@ -171,16 +156,12 @@ jobs:
 
           mkdir -p apt/pool/main/a/ascii-webcam
           cp "$DEB_AMD64" apt/pool/main/a/ascii-webcam/
-          cp "$DEB_ARM64" apt/pool/main/a/ascii-webcam/
 
           mkdir -p apt/dists/stable/main/binary-amd64
-          mkdir -p apt/dists/stable/main/binary-arm64
 
           cd apt
           dpkg-scanpackages --arch amd64 pool/ > dists/stable/main/binary-amd64/Packages
-          dpkg-scanpackages --arch arm64 pool/ > dists/stable/main/binary-arm64/Packages
           gzip -kf dists/stable/main/binary-amd64/Packages
-          gzip -kf dists/stable/main/binary-arm64/Packages
           cd ..
 
           git config user.name "github-actions[bot]"

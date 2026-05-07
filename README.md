@@ -13,8 +13,18 @@ brew tap xela1601/tap
 brew install ascii-webcam
 ```
 
-> The tap formula is auto-updated on each release. If you haven't created the tap yet,
-> see [below](#setting-up-the-homebrew-tap).
+> The tap formula is auto-updated on each releas
+
+### apt (Debian / Ubuntu, amd64)
+
+```
+echo "deb [trusted=yes] https://xela1601.github.io/ascii-webcam/apt ./" | \
+  sudo tee /etc/apt/sources.list.d/ascii-webcam.list
+sudo apt update
+sudo apt install ascii-webcam
+```
+
+### Cargo
 
 ```
 cargo install --git https://github.com/xela1601/ascii-webcam.git
@@ -91,10 +101,11 @@ Log out and back in for the change to take effect.
 - FPS depends on terminal size.
 - Default scaling is **stretch** (full frame, fills terminal). Press `f` for **fit** (preserves aspect ratio, centers with padding).
 
-## Setting up the Homebrew tap
+## Homebrew tap
 
-Push a semver tag:
+Is created automatically via workflow, when a semver tag is pushed.
+The workflow will build both architectures, create the GitHub Release, and push the formula to https://github.com/xela1601/homebrew-tap.
+
 ```
 git tag v1.0.0 && git push origin v1.0.0
 ```
-The workflow will build both architectures, create the GitHub Release, and push the formula to your tap.
