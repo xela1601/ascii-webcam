@@ -1,13 +1,13 @@
 Package: ascii-webcam
-Version: 1.0.0-1
+Version: 1.0.1-1
 Architecture: amd64
 Maintainer: Alexander Schreiner <github@alexander-schreiner.de>
-Installed-Size: 1313
-Filename: pool/main/a/ascii-webcam/ascii-webcam_1.0.0-1_amd64.deb
-Size: 488452
-MD5sum: 93cc905e55913ae2baa09b5a91f32e88
-SHA1: dad605c57394e36205157cada56d81d407fa1458
-SHA256: c2339ff93982bf42f2f185ee218e706bfdb7bd284a0cdffd3609d738bf4c34f1
+Installed-Size: 1316
+Filename: pool/main/a/ascii-webcam/ascii-webcam_1.0.1-1_amd64.deb
+Size: 489628
+MD5sum: f647c043607c1539685102f5393010f1
+SHA1: 6ab2aa63e8920266c5ccb91ddcc8764a1805738c
+SHA256: ea523469f4080d9b92cee66a9a2f5f0f57521bc0fad0cd17410e5508cad3f926
 Section: video
 Priority: optional
 Homepage: https://github.com/xela1601/ascii-webcam
@@ -33,7 +33,8 @@ Description: A terminal-based webcam that renders your live feed as colored ASCI
  ### apt (Debian / Ubuntu, amd64 and arm64)
  .
  ```
- echo "deb [trusted=yes] https://xela1601.github.io/ascii-webcam/apt ./" | \
+ echo "deb [trusted=yes] https://xela1601.github.io/ascii-webcam/apt stable
+ main" | \
    sudo tee /etc/apt/sources.list.d/ascii-webcam.list
  sudo apt update
  sudo apt install ascii-webcam
