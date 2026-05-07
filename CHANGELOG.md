@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-05-07
+
+### Added
+- Black & white mode toggle (`-b` flag / `b` key) — renders in monochrome white instead of per-pixel RGB
+
+### Changed
+- Split into modules: `main.rs` (entry point, App struct, input), `camera.rs`, `render.rs`
+- Extracted `App` struct for mutable state, `render()` function, `handle_input()` function
+- Renamed variables for clarity (`tw→term_w`, `rw→render_w`, `pad_x`/`pad_y`)
+
+### Fixed
+- Removed stale `src/Cargo.toml` from initial scaffold
+
 ## [1.1.1] - 2026-05-07
 
 ### Fixed
@@ -61,6 +74,7 @@ All notable changes to this project will be documented in this file.
 - Python runtime and OpenCV system dependencies
 - `pyfiglet`, `future`, `wcwidth` transitive dependencies
 
+[1.2.0]: https://github.com/xela1601/ascii-webcam/releases/tag/v1.2.0
 [1.1.1]: https://github.com/xela1601/ascii-webcam/releases/tag/v1.1.1
 [1.1.0]: https://github.com/xela1601/ascii-webcam/releases/tag/v1.1.0
 [1.0.1]: https://github.com/xela1601/ascii-webcam/releases/tag/v1.0.1
