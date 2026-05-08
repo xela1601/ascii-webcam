@@ -22,6 +22,7 @@ impl Output {
     }
 
     #[cfg(not(target_os = "linux"))]
+    #[allow(dead_code)]
     pub fn v4l2(_device: Option<&str>) -> Option<Self> {
         None
     }

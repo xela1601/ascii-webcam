@@ -46,7 +46,6 @@ struct App {
     mirror: bool,
     transpose: bool,
     bw: bool,
-    output_enabled: bool,
     capture_dir: std::path::PathBuf,
     lut: [char; 256],
     frame_count: u64,
@@ -76,7 +75,6 @@ fn handle_input(app: &mut App) -> bool {
                 KeyCode::Char('m') => app.mirror = !app.mirror,
                 KeyCode::Char('t') => app.transpose = !app.transpose,
                 KeyCode::Char('b') => app.bw = !app.bw,
-                KeyCode::Char('s') => app.output_enabled = !app.output_enabled,
                 KeyCode::Char('c') => {
                     if !app.last_frame_plain.is_empty() {
                         let path = app.capture_dir.join(format!("capture_{}.txt", app.capture_index));
@@ -123,7 +121,6 @@ fn main() {
         mirror: args.mirror,
         transpose: args.transpose,
         bw: args.bw,
-        output_enabled: args.http || args.v4l2_device.is_some(),
         capture_dir: logging::capture_dir(),
         lut: render::build_lut(args.invert),
         frame_count: 0,
@@ -148,8 +145,6 @@ fn main() {
     } else {
         None
     };
-
-    let mut vcam = output::Output::v4l2(args.v4l2_device.as_deref());
 
     loop {
         if !running.load(std::sync::atomic::Ordering::SeqCst) {
@@ -199,16 +194,6 @@ fn main() {
                 }
             }
 
-            if app.output_enabled {
-                if vcam.is_none() {
-                    vcam = output::Output::v4l2(args.v4l2_device.as_deref());
-                }
-                if let Some(ref mut v) = vcam {
-                    v.update(&frame.rgb, frame.width, frame.height);
-                }
-            } else {
-                vcam = None;
-            }
         }
 
         if has_tty {

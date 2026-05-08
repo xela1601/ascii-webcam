@@ -1,207 +1,7 @@
-pub const GSCALE: &str = "   .:-=+*#%@";
+pub const GSCALE: &str = " .'`^\",:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
 pub const CHAR_ASPECT: f64 = 0.5;
 pub const CHAR_PX_W: u32 = 8;
 pub const CHAR_PX_H: u32 = 16;
-
-/// Build an 8-wide bitmap from a visual pattern. Each string row is 8 chars
-/// (space or #), top-to-bottom.
-fn glyph(rows: &[&str]) -> u128 {
-    let mut m = 0u128;
-    for (y, row) in rows.iter().enumerate() {
-        for (x, c) in row.chars().enumerate() {
-            if c != ' ' {
-                m |= 1u128 << (y * 8 + x);
-            }
-        }
-    }
-    m
-}
-
-fn char_bitmap(ch: char) -> u128 {
-    match ch {
-        ' ' => glyph(&[
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-        ]),
-        '.' => glyph(&[
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "  ####  ",
-            "  ####  ",
-            "        ",
-            "        ",
-        ]),
-        ':' => glyph(&[
-            "        ",
-            "        ",
-            "        ",
-            "  ####  ",
-            "  ####  ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "  ####  ",
-            "  ####  ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-        ]),
-        '-' => glyph(&[
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            " ###### ",
-            " ###### ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-        ]),
-        '=' => glyph(&[
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            " ###### ",
-            " ###### ",
-            "        ",
-            " ###### ",
-            " ###### ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-        ]),
-        '+' => glyph(&[
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "   ##   ",
-            "   ##   ",
-            " ###### ",
-            " ###### ",
-            "   ##   ",
-            "   ##   ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-        ]),
-        '*' => glyph(&[
-            "        ",
-            "        ",
-            "   ##   ",
-            " # #### ",
-            " ###### ",
-            " ###### ",
-            " ###### ",
-            " ###### ",
-            " ###### ",
-            " ###### ",
-            " # #### ",
-            "   ##   ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-        ]),
-        '#' => glyph(&[
-            "        ",
-            "  #  #  ",
-            "  #  #  ",
-            " #######",
-            " #######",
-            "  #  #  ",
-            "  #  #  ",
-            "  #  #  ",
-            "  #  #  ",
-            "  #  #  ",
-            " #######",
-            " #######",
-            "  #  #  ",
-            "  #  #  ",
-            "        ",
-            "        ",
-        ]),
-        '%' => glyph(&[
-            "  ###   ",
-            " #   #  ",
-            " #  #   ",
-            "  ###   ",
-            "     #  ",
-            "    #   ",
-            "   #    ",
-            "  #     ",
-            " #      ",
-            " ####   ",
-            " #   #  ",
-            " ####   ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-        ]),
-        '@' => glyph(&[
-            "        ",
-            "  ####  ",
-            "  #  ## ",
-            "  # ####",
-            "  # ####",
-            "  # ####",
-            "  # ### ",
-            "  # ####",
-            "  # # # ",
-            "  # # # ",
-            "  ##### ",
-            "  ####  ",
-            "        ",
-            "        ",
-            "        ",
-            "        ",
-        ]),
-        _ => 0,
-    }
-}
 
 pub struct RenderOutput {
     pub ansi: String,
@@ -314,19 +114,48 @@ pub fn render(
                 }
                 app.last_frame_plain.push(ch);
 
-                // Draw pixel block into image buffer
+                // Density fill: character's position in GSCALE determines fill height
+                let density = GSCALE.chars().position(|c| c == ch).unwrap_or(0) as f64
+                    / (GSCALE.len() - 1) as f64;
+                let fill_h = (CHAR_PX_H as f64 * density).round() as u32;
                 let px = x * CHAR_PX_W;
                 let py = y * CHAR_PX_H;
-                let bitmap = char_bitmap(ch);
                 for dy in 0..CHAR_PX_H {
                     let row_start = ((py + dy) * img_w + px) as usize * 3;
                     for dx in 0..CHAR_PX_W {
-                        let bit = (bitmap >> (dy * 8 + dx)) & 1;
-                        let (pr, pg, pb) = if bit == 1 { (r, g, b) } else { (0, 0, 0) };
                         let i = row_start + dx as usize * 3;
-                        img[i] = pr;
-                        img[i + 1] = pg;
-                        img[i + 2] = pb;
+                        if dy >= CHAR_PX_H - fill_h {
+                            img[i] = r;
+                            img[i + 1] = g;
+                            img[i + 2] = b;
+                        } else {
+                            img[i] = 0;
+                            img[i + 1] = 0;
+                            img[i + 2] = 0;
+                        }
+                    }
+                }
+                app.last_frame_plain.push(ch);
+
+                // Density fill: character's position in GSCALE determines fill height
+                let density = GSCALE.chars().position(|c| c == ch).unwrap_or(0) as f64
+                    / (GSCALE.len() - 1) as f64;
+                let fill_h = (CHAR_PX_H as f64 * density).round() as u32;
+                let px = x * CHAR_PX_W;
+                let py = y * CHAR_PX_H;
+                for dy in 0..CHAR_PX_H {
+                    let row_start = ((py + dy) * img_w + px) as usize * 3;
+                    for dx in 0..CHAR_PX_W {
+                        let i = row_start + dx as usize * 3;
+                        if dy >= CHAR_PX_H - fill_h {
+                            img[i] = r;
+                            img[i + 1] = g;
+                            img[i + 2] = b;
+                        } else {
+                            img[i] = 0;
+                            img[i + 1] = 0;
+                            img[i + 2] = 0;
+                        }
                     }
                 }
             }
@@ -338,15 +167,14 @@ pub fn render(
     let invert_label = if app.invert { "I" } else { " " };
     let transp_label = if transposed { "T" } else { " " };
     let bw_label = if app.bw { "B" } else { " " };
-    let v4l2_label = if app.output_enabled { "V" } else { " " };
     let cam_label = format!("{orig_w}x{orig_h}");
 
     let fps_text = format!(" {fps:3} FPS ");
     let hud = format!(
         "\x1b[{hud_row};1H\x1b[48;2;30;30;30m\x1b[38;2;180;180;180m\
          {fps_text}\
-         ┃ {mirror_label}{invert_label}{transp_label}{bw_label}{v4l2_label} ┃ {cam_label} -> {render_w}x{render_h} \
-         ┃ q:quit  r:inv  m:mir  t:trn  b:bw  s:v4l2  c:capture\
+         ┃ {mirror_label}{invert_label}{transp_label}{bw_label} ┃ {cam_label} -> {render_w}x{render_h} \
+         ┃ q:quit  r:inv  m:mir  t:trn  b:bw  c:capture\
          \x1b[K\x1b[0m",
         hud_row = term_h,
     );
