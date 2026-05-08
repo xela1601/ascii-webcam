@@ -1,7 +1,39 @@
+use std::collections::HashMap;
+use std::sync::LazyLock;
+
+use fontdue::Font;
+
 pub const GSCALE: &str = " .'`^\",:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
 pub const CHAR_ASPECT: f64 = 0.5;
-pub const CHAR_PX_W: u32 = 8;
-pub const CHAR_PX_H: u32 = 16;
+pub const CHAR_PX_W: u32 = 10;
+pub const CHAR_PX_H: u32 = 20;
+
+const FONT_DATA: &[u8] = include_bytes!("../assets/ProggyClean.ttf");
+const FONT_SIZE: f32 = 18.0;
+
+struct Glyph {
+    width: usize,
+    height: usize,
+    ymin: i32,
+    pixels: Vec<u8>,
+}
+
+fn build_glyphs() -> HashMap<char, Glyph> {
+    let font = Font::from_bytes(FONT_DATA, fontdue::FontSettings::default())
+        .expect("failed to load embedded font");
+    let mut map = HashMap::new();
+    for ch in GSCALE.chars() {
+        if map.contains_key(&ch) { continue; }
+        let (metrics, bitmap) = font.rasterize(ch, FONT_SIZE);
+        map.insert(ch, Glyph {
+            width: metrics.width,
+            height: metrics.height,
+            ymin: metrics.ymin,
+            pixels: bitmap,
+        });
+    }
+    map
+}
 
 pub struct RenderOutput {
     pub ansi: String,
@@ -38,6 +70,8 @@ pub fn render(
     term_w: u32,
     term_h: u32,
 ) -> RenderOutput {
+    static GLYPHS: LazyLock<HashMap<char, Glyph>> = LazyLock::new(build_glyphs);
+
     let transposed = app.transpose || orig_w < orig_h;
     let (frame_w, frame_h, buf_stride) = if transposed {
         (orig_h, orig_w, orig_w)
@@ -114,47 +148,21 @@ pub fn render(
                 }
                 app.last_frame_plain.push(ch);
 
-                // Density fill: character's position in GSCALE determines fill height
-                let density = GSCALE.chars().position(|c| c == ch).unwrap_or(0) as f64
-                    / (GSCALE.len() - 1) as f64;
-                let fill_h = (CHAR_PX_H as f64 * density).round() as u32;
-                let px = x * CHAR_PX_W;
-                let py = y * CHAR_PX_H;
-                for dy in 0..CHAR_PX_H {
-                    let row_start = ((py + dy) * img_w + px) as usize * 3;
-                    for dx in 0..CHAR_PX_W {
-                        let i = row_start + dx as usize * 3;
-                        if dy >= CHAR_PX_H - fill_h {
-                            img[i] = r;
-                            img[i + 1] = g;
-                            img[i + 2] = b;
-                        } else {
-                            img[i] = 0;
-                            img[i + 1] = 0;
-                            img[i + 2] = 0;
-                        }
-                    }
-                }
-                app.last_frame_plain.push(ch);
-
-                // Density fill: character's position in GSCALE determines fill height
-                let density = GSCALE.chars().position(|c| c == ch).unwrap_or(0) as f64
-                    / (GSCALE.len() - 1) as f64;
-                let fill_h = (CHAR_PX_H as f64 * density).round() as u32;
-                let px = x * CHAR_PX_W;
-                let py = y * CHAR_PX_H;
-                for dy in 0..CHAR_PX_H {
-                    let row_start = ((py + dy) * img_w + px) as usize * 3;
-                    for dx in 0..CHAR_PX_W {
-                        let i = row_start + dx as usize * 3;
-                        if dy >= CHAR_PX_H - fill_h {
-                            img[i] = r;
-                            img[i + 1] = g;
-                            img[i + 2] = b;
-                        } else {
-                            img[i] = 0;
-                            img[i + 1] = 0;
-                            img[i + 2] = 0;
+                // Draw glyph onto image buffer
+                if let Some(glyph) = GLYPHS.get(&ch) {
+                    let cx = (x * CHAR_PX_W) as i32 + (CHAR_PX_W as i32 - glyph.width as i32) / 2;
+                    let cy = (y * CHAR_PX_H) as i32 + ((CHAR_PX_H as i32 + glyph.height as i32) / 2) - glyph.ymin;
+                    for gy in 0..glyph.height {
+                        let iy = cy + gy as i32;
+                        if iy < 0 || iy >= img_h as i32 { continue; }
+                        for gx in 0..glyph.width {
+                            let ix = cx + gx as i32;
+                            if ix < 0 || ix >= img_w as i32 { continue; }
+                            let a = glyph.pixels[gy * glyph.width + gx] as f64 / 255.0;
+                            let oi = ((iy as u32 * img_w + ix as u32) * 3) as usize;
+                            img[oi] = (r as f64 * a) as u8;
+                            img[oi + 1] = (g as f64 * a) as u8;
+                            img[oi + 2] = (b as f64 * a) as u8;
                         }
                     }
                 }
