@@ -19,16 +19,22 @@ impl Stream {
             let listener = match TcpListener::bind(&addr) {
                 Ok(l) => l,
                 Err(e) => {
-                    eprintln!("Stream: cannot bind {addr}: {e}");
+                    log::error!("HTTP stream: cannot bind {addr}: {e}");
                     return;
                 }
             };
-            eprintln!("Stream: http://localhost:{port}");
+            log::info!("HTTP stream: http://localhost:{port}");
 
             for stream in listener.incoming() {
                 let mut stream = match stream {
-                    Ok(s) => s,
-                    Err(_) => continue,
+                    Ok(s) => {
+                        log::debug!("HTTP stream: client connected");
+                        s
+                    }
+                    Err(e) => {
+                        log::warn!("HTTP stream: connection error: {e}");
+                        continue;
+                    }
                 };
 
                 let boundary = "ascii-webcam-boundary";
@@ -62,6 +68,7 @@ impl Stream {
                             .write_all(format!("\r\n--{boundary}\r\n").as_bytes())
                             .is_err()
                     {
+                        log::debug!("HTTP stream: client disconnected");
                         break;
                     }
                 }

@@ -1,6 +1,7 @@
 mod camera;
-mod render;
+mod logging;
 mod output;
+mod render;
 mod stream;
 
 use std::fs;
@@ -37,6 +38,8 @@ struct Args {
     port: u16,
     #[arg(long = "v4l2", help = "v4l2loopback device (Linux virtual camera)")]
     v4l2_device: Option<String>,
+    #[arg(short = 'v', long, help = "Verbose logging (debug level to file)")]
+    verbose: bool,
 }
 
 struct App {
@@ -45,6 +48,7 @@ struct App {
     transpose: bool,
     bw: bool,
     output_enabled: bool,
+    capture_dir: std::path::PathBuf,
     lut: [char; 256],
     frame_count: u64,
     capture_index: u32,
@@ -76,12 +80,9 @@ fn handle_input(app: &mut App) -> bool {
                 KeyCode::Char('s') => app.output_enabled = !app.output_enabled,
                 KeyCode::Char('c') => {
                     if !app.last_frame_plain.is_empty() {
-                        let path = format!(
-                            "{}/capture_{}.txt",
-                            render::CAPTURE_DIR,
-                            app.capture_index
-                        );
+                        let path = app.capture_dir.join(format!("capture_{}.txt", app.capture_index));
                         if fs::write(&path, &app.last_frame_plain).is_ok() {
+                            log::info!("capture saved to {}", path.display());
                             app.capture_index += 1;
                         }
                     }
@@ -95,6 +96,9 @@ fn handle_input(app: &mut App) -> bool {
 
 fn main() {
     let args = Args::parse();
+    logging::init(args.verbose);
+
+    log::info!("ascii-webcam v{} starting", env!("CARGO_PKG_VERSION"));
 
     let mut app = App {
         invert: args.invert,
@@ -102,6 +106,7 @@ fn main() {
         transpose: args.transpose,
         bw: args.bw,
         output_enabled: args.http || args.v4l2_device.is_some(),
+        capture_dir: logging::capture_dir(),
         lut: render::build_lut(args.invert),
         frame_count: 0,
         capture_index: 0,
@@ -120,7 +125,7 @@ fn main() {
     let mut stdout = io::stdout();
     execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide).unwrap();
     terminal::enable_raw_mode().unwrap();
-    fs::create_dir_all(render::CAPTURE_DIR).ok();
+    fs::create_dir_all(&app.capture_dir).ok();
 
     let streamer = if args.http {
         Some(stream::Stream::start(args.port))

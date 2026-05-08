@@ -19,33 +19,41 @@ pub struct Cam {
 
 pub fn open() -> Result<Cam, String> {
     let idx = CameraIndex::Index(0);
+    log::info!("opening camera");
 
     let strategies: [(bool, RequestedFormatType); 4] = [
-        // Try RGB with various format strategies
         (false, RequestedFormatType::None),
         (false, RequestedFormatType::AbsoluteHighestResolution),
         (false, RequestedFormatType::AbsoluteHighestFrameRate),
-        // Try YUYV as last resort
         (true, RequestedFormatType::None),
     ];
 
     let mut last_err = String::new();
     for &(yuyv, fmt_type) in &strategies {
+        let label = if yuyv { "YUYV" } else { "RGB" };
+        log::debug!("trying camera format {} ({:?})", label, fmt_type);
         if yuyv {
             let req = RequestedFormat::new::<YuyvFormat>(fmt_type);
             match try_open(idx.clone(), req) {
-                Ok(cam) => return Ok(Cam { cam, is_yuyv: true }),
+                Ok(cam) => {
+                    log::info!("camera opened (YUYV)");
+                    return Ok(Cam { cam, is_yuyv: true });
+                }
                 Err(e) => last_err = e,
             }
         } else {
             let req = RequestedFormat::new::<RgbFormat>(fmt_type);
             match try_open(idx.clone(), req) {
-                Ok(cam) => return Ok(Cam { cam, is_yuyv: false }),
+                Ok(cam) => {
+                    log::info!("camera opened (RGB)");
+                    return Ok(Cam { cam, is_yuyv: false });
+                }
                 Err(e) => last_err = e,
             }
         }
     }
 
+    log::error!("camera open failed: {}", last_err);
     Err(last_err)
 }
 

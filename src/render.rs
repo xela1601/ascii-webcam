@@ -1,5 +1,4 @@
 pub const GSCALE: &str = "   .:-=+*#%@";
-pub const CAPTURE_DIR: &str = "captures";
 pub const CHAR_ASPECT: f64 = 0.5;
 
 pub struct RenderOutput {
