@@ -1,13 +1,13 @@
 Package: ascii-webcam
-Version: 1.2.0-1
+Version: 1.2.1-1
 Architecture: amd64
 Maintainer: Alexander Schreiner <github@alexander-schreiner.de>
-Installed-Size: 1320
-Filename: pool/main/a/ascii-webcam/ascii-webcam_1.2.0-1_amd64.deb
-Size: 490676
-MD5sum: 288e3bb23000890403b020278d5a7e85
-SHA1: 5a308a9cb82d69820b6dc68b98429fc4e210194a
-SHA256: d5ca7f77cc23a895801acd381bdc454368be90f2bf8d6e67f29e8b3e141cd987
+Installed-Size: 1322
+Filename: pool/main/a/ascii-webcam/ascii-webcam_1.2.1-1_amd64.deb
+Size: 491704
+MD5sum: 5e60931a5d603ae1cdf080ecbf6aaec5
+SHA1: 6d3418617d913f3fbacdc6bc7addbed7decd2e81
+SHA256: 803cc6f44978ac285bfc96ad79659bd44efa01f304e4b514ce99f3d12697927d
 Section: video
 Priority: optional
 Homepage: https://github.com/xela1601/ascii-webcam
@@ -130,4 +130,19 @@ Description: A terminal-based webcam that renders your live feed as colored ASCI
  ```
  git tag v1.0.0 && git push origin v1.0.0
  ```
+ .
+ ## Releasing
+ .
+ Releases are driven by **semver tags** and
+ **[git-cliff](https://git-cliff.org)** for changelogs.
+ .
+ 1. Write [conventional commits](https://www.conventionalcommits.org) (`feat:`,
+ `fix:`, `refactor:` etc.)
+ 2. Bump the version in `Cargo.toml`
+ 3. Tag and push:
+    ```
+    git tag v1.3.0 && git push origin v1.3.0
+    ```
+ 4. The workflow builds all architectures, generates the changelog with
+ `git-cliff`, and publishes the release
 
