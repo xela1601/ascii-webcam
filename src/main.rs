@@ -96,9 +96,28 @@ fn handle_input(app: &mut App) -> bool {
 
 fn main() {
     let args = Args::parse();
-    logging::init(args.verbose);
 
+    let mut stdout = io::stdout();
+    let has_tty = execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide).is_ok()
+        && terminal::enable_raw_mode().is_ok();
+    if !has_tty {
+        terminal::disable_raw_mode().ok();
+    }
+
+    logging::init(args.verbose, has_tty);
     log::info!("ascii-webcam v{} starting", env!("CARGO_PKG_VERSION"));
+
+    if !has_tty {
+        log::info!("no TTY — running headless, press Ctrl+C to stop");
+    }
+
+    let running = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let r = running.clone();
+    ctrlc::set_handler(move || {
+        log::info!("shutting down...");
+        r.store(false, std::sync::atomic::Ordering::SeqCst);
+    })
+    .ok();
 
     let mut app = App {
         invert: args.invert,
@@ -123,13 +142,6 @@ fn main() {
     };
 
     let mut stdout = io::stdout();
-    let has_tty = execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide).is_ok()
-        && terminal::enable_raw_mode().is_ok();
-
-    if !has_tty {
-        log::warn!("no TTY — running headless (stream only)");
-    }
-
     fs::create_dir_all(&app.capture_dir).ok();
 
     let streamer = if args.http {
@@ -141,11 +153,36 @@ fn main() {
     let mut vcam = output::Output::start(args.v4l2_device.as_deref(), args.port);
 
     loop {
+        if !running.load(std::sync::atomic::Ordering::SeqCst) {
+            cleanup();
+            log::info!("shut down cleanly");
+            return;
+        }
+
         let (term_cols, term_rows) = terminal::size().unwrap_or((80, 24));
         let term_w = term_cols as u32;
         let term_h = term_rows as u32;
 
         if let Some(frame) = camera.next_frame() {
+            // Periodic status in headless mode (every ~60 frames)
+            if !has_tty {
+                app.frame_count += 1;
+                if app.frame_count % 60 == 0 {
+                    let elapsed = app.start.elapsed().as_secs_f64();
+                    let fps = if elapsed > 0.0 {
+                        (app.frame_count as f64 / elapsed) as u32
+                    } else {
+                        0
+                    };
+                    log::info!(
+                        "frame {:>6} | {fps:>3} FPS | {}x{}",
+                        app.frame_count,
+                        frame.width,
+                        frame.height
+                    );
+                }
+            }
+
             if has_tty {
                 let rendered = render::render(&frame.rgb, frame.width, frame.height, &mut app, term_w, term_h);
                 write!(stdout, "{}", rendered.ansi).unwrap();

@@ -18,7 +18,7 @@ pub fn capture_dir() -> PathBuf {
     data_dir().join("captures")
 }
 
-pub fn init(verbose: bool) {
+pub fn init(verbose: bool, has_tty: bool) {
     let base = data_dir();
     fs::create_dir_all(base.join("logs")).ok();
     fs::create_dir_all(base.join("captures")).ok();
@@ -29,9 +29,16 @@ pub fn init(verbose: bool) {
         LevelFilter::Info
     };
 
+    // In headless mode, show info+ on stderr for visibility
+    let stderr_level = if has_tty {
+        LevelFilter::Warn
+    } else {
+        LevelFilter::Info
+    };
+
     CombinedLogger::init(vec![
         TermLogger::new(
-            LevelFilter::Warn,
+            stderr_level,
             Config::default(),
             TerminalMode::Stderr,
             ColorChoice::Auto,
