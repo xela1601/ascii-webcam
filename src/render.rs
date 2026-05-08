@@ -1,8 +1,13 @@
 pub const GSCALE: &str = "   .:-=+*#%@";
 pub const CHAR_ASPECT: f64 = 0.5;
+pub const CHAR_PX_W: u32 = 10;
+pub const CHAR_PX_H: u32 = 20;
 
 pub struct RenderOutput {
     pub ansi: String,
+    pub image: Vec<u8>,
+    pub image_w: u32,
+    pub image_h: u32,
 }
 
 pub fn build_lut(invert: bool) -> [char; 256] {
@@ -67,6 +72,10 @@ pub fn render(
     let mut ansi =
         String::with_capacity((term_w as u32 * art_rows as u32 * 24 + 256) as usize);
 
+    let img_w = render_w * CHAR_PX_W;
+    let img_h = art_rows * CHAR_PX_H;
+    let mut img = vec![0u8; (img_w * img_h * 3) as usize];
+
     ansi.push_str("\x1b[?2026h\x1b[H\x1b[2J");
 
     for y in 0..art_rows {
@@ -104,6 +113,19 @@ pub fn render(
                     ansi.push_str(&format!("\x1b[38;2;{r};{g};{b}m{ch}"));
                 }
                 app.last_frame_plain.push(ch);
+
+                // Draw pixel block into image buffer
+                let px = x * CHAR_PX_W;
+                let py = y * CHAR_PX_H;
+                for dy in 0..CHAR_PX_H {
+                    let row_start = ((py + dy) * img_w + px) as usize * 3;
+                    for dx in 0..CHAR_PX_W {
+                        let i = row_start + dx as usize * 3;
+                        img[i] = r;
+                        img[i + 1] = g;
+                        img[i + 2] = b;
+                    }
+                }
             }
         }
         app.last_frame_plain.push('\n');
@@ -128,5 +150,5 @@ pub fn render(
     ansi.push_str(&hud);
     ansi.push_str("\x1b[?2026l");
 
-    RenderOutput { ansi }
+    RenderOutput { ansi, image: img, image_w: img_w, image_h: img_h }
 }

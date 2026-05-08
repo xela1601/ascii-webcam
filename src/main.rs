@@ -186,10 +186,17 @@ fn main() {
                 let rendered = render::render(&frame.rgb, frame.width, frame.height, &mut app, term_w, term_h);
                 write!(stdout, "{}", rendered.ansi).unwrap();
                 stdout.flush().unwrap();
-            }
 
-            if let Some(ref mut s) = http_out {
-                s.update(&frame.rgb, frame.width, frame.height);
+                if let Some(ref mut s) = http_out {
+                    s.update(&rendered.image, rendered.image_w, rendered.image_h);
+                }
+            } else {
+                // Headless: render ASCII to image for the stream
+                let rendered = render::render(&frame.rgb, frame.width, frame.height, &mut app, term_w, term_h);
+
+                if let Some(ref mut s) = http_out {
+                    s.update(&rendered.image, rendered.image_w, rendered.image_h);
+                }
             }
 
             if app.output_enabled {
