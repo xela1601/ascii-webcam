@@ -114,7 +114,7 @@ pub fn render(
     let invert_label = if app.invert { "I" } else { " " };
     let transp_label = if transposed { "T" } else { " " };
     let bw_label = if app.bw { "B" } else { " " };
-    let v4l2_label = if app.v4l2_enabled { "V" } else { " " };
+    let v4l2_label = if app.output_enabled { "V" } else { " " };
     let cam_label = format!("{orig_w}x{orig_h}");
 
     let fps_text = format!(" {fps:3} FPS ");

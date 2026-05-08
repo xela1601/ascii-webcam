@@ -71,9 +71,11 @@ checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 name = "ascii-webcam"
 version = "1.2.1"
 dependencies = [
+ "cfg-if 1.0.4",
  "clap",
  "crossterm",
  "image",
+ "libc",
  "nokhwa",
 ]
 
