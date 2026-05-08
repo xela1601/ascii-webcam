@@ -76,7 +76,11 @@ cargo run --release
 ascii-webcam --http
 ```
 
-Open `http://localhost:8080` in a browser, or add as a media source in OBS.
+Open `http://localhost:8080` in a browser, or use it as a camera source:
+
+**OBS**: Add a **Media Source**, uncheck "Local File", set Input to `http://localhost:8080`, click **Start Virtual Camera**.
+
+If OBS refuses the MJPEG stream, use VLC as a bridge: **VLC Video Source** (in OBS) → add `http://localhost:8080`.
 
 ### v4l2loopback — Linux (`--v4l2`)
 
