@@ -1,7 +1,23 @@
 pub const GSCALE: &str = "   .:-=+*#%@";
 pub const CHAR_ASPECT: f64 = 0.5;
-pub const CHAR_PX_W: u32 = 10;
-pub const CHAR_PX_H: u32 = 20;
+pub const CHAR_PX_W: u32 = 6;
+pub const CHAR_PX_H: u32 = 10;
+
+fn char_bitmap(ch: char) -> u64 {
+    match ch {
+        ' ' => 0,
+        '.' => 0x00030000,
+        ':' => 0x0003000300,
+        '-' => 0x0007000000,
+        '=' => 0x000700000700,
+        '+' => 0x020702000000,
+        '*' => 0x063F1F3F0600,
+        '#' => 0x0C3F3F1F3F3F0C,
+        '%' => 0x2310180C060231,
+        '@' => 0x1F3F3B3B3F1F00,
+        _ => 0,
+    }
+}
 
 pub struct RenderOutput {
     pub ansi: String,
@@ -117,13 +133,20 @@ pub fn render(
                 // Draw pixel block into image buffer
                 let px = x * CHAR_PX_W;
                 let py = y * CHAR_PX_H;
+                let bitmap = char_bitmap(ch);
                 for dy in 0..CHAR_PX_H {
                     let row_start = ((py + dy) * img_w + px) as usize * 3;
                     for dx in 0..CHAR_PX_W {
+                        let bit = (bitmap >> (dy * CHAR_PX_W + dx)) & 1;
+                        let (pr, pg, pb) = if bit == 1 {
+                            ((r as u16 * 3 / 10) as u8, (g as u16 * 3 / 10) as u8, (b as u16 * 3 / 10) as u8)
+                        } else {
+                            (r, g, b)
+                        };
                         let i = row_start + dx as usize * 3;
-                        img[i] = r;
-                        img[i + 1] = g;
-                        img[i + 2] = b;
+                        img[i] = pr;
+                        img[i + 1] = pg;
+                        img[i + 2] = pb;
                     }
                 }
             }
