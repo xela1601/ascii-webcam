@@ -19,3 +19,4 @@ assets = [
 nokhwa = { version = "0.10", features = ["input-avfoundation", "input-v4l"] }
 crossterm = "0.28"
 clap = { version = "4", features = ["derive"] }
+image = { version = "0.25", default-features = false, features = ["jpeg"] }

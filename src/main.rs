@@ -1,5 +1,6 @@
 mod camera;
 mod render;
+mod stream;
 
 use std::fs;
 use std::io::{self, Write};
@@ -29,6 +30,10 @@ struct Args {
     transpose: bool,
     #[arg(short = 'b', long, help = "Black & white mode")]
     bw: bool,
+    #[arg(short = 's', long, help = "Start HTTP MJPEG stream")]
+    stream: bool,
+    #[arg(short = 'p', long, help = "HTTP stream port", default_value = "8080")]
+    port: u16,
 }
 
 struct App {
@@ -111,6 +116,12 @@ fn main() {
     terminal::enable_raw_mode().unwrap();
     fs::create_dir_all(render::CAPTURE_DIR).ok();
 
+    let streamer = if args.stream {
+        Some(stream::Stream::start(args.port))
+    } else {
+        None
+    };
+
     loop {
         let (term_cols, term_rows) = terminal::size().unwrap_or((80, 24));
         let term_w = term_cols as u32;
@@ -120,6 +131,10 @@ fn main() {
             let output = render::render(&frame.rgb, frame.width, frame.height, &mut app, term_w, term_h);
             write!(stdout, "{}", output.ansi).unwrap();
             stdout.flush().unwrap();
+
+            if let Some(ref s) = streamer {
+                s.update(&frame.rgb, frame.width, frame.height);
+            }
         }
 
         if !handle_input(&mut app) {
