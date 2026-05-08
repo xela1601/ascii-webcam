@@ -1,6 +1,8 @@
 mod camera;
 mod render;
 mod stream;
+#[cfg(target_os = "linux")]
+mod v4l2;
 
 use std::fs;
 use std::io::{self, Write};
@@ -34,6 +36,8 @@ struct Args {
     stream: bool,
     #[arg(short = 'p', long, help = "HTTP stream port", default_value = "8080")]
     port: u16,
+    #[arg(long = "v4l2", help = "Write to v4l2loopback device (Linux only, e.g. /dev/video2)")]
+    v4l2: Option<String>,
 }
 
 struct App {
@@ -122,6 +126,16 @@ fn main() {
         None
     };
 
+    #[cfg(target_os = "linux")]
+    let mut v4l2_out: Option<v4l2::Output> = None;
+    #[cfg(not(target_os = "linux"))]
+    let _v4l2_out: Option<()> = {
+        if args.v4l2.is_some() {
+            eprintln!("--v4l2 is only supported on Linux");
+        }
+        None
+    };
+
     loop {
         let (term_cols, term_rows) = terminal::size().unwrap_or((80, 24));
         let term_w = term_cols as u32;
@@ -134,6 +148,16 @@ fn main() {
 
             if let Some(ref s) = streamer {
                 s.update(&frame.rgb, frame.width, frame.height);
+            }
+
+            #[cfg(target_os = "linux")]
+            if let Some(dev) = &args.v4l2 {
+                if v4l2_out.is_none() {
+                    v4l2_out = v4l2::Output::open(dev, frame.width, frame.height).ok();
+                }
+                if let Some(ref mut v) = v4l2_out {
+                    let _ = v.write(&frame.rgb);
+                }
             }
         }
 
