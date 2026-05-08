@@ -32,7 +32,7 @@ impl Drop for Inner {
 }
 
 impl Inner {
-    pub fn start(device: Option<&str>, _port: u16) -> Option<Self> {
+    pub fn start(device: Option<&str>) -> Option<Self> {
         let dev = device?;
         let file = OpenOptions::new().write(true).open(dev).ok()?;
         let fd = file.as_raw_fd();

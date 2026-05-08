@@ -10,7 +10,7 @@ pub struct Inner {
 }
 
 impl Inner {
-    pub fn start(_device: Option<&str>, port: u16) -> Option<Self> {
+    pub fn start(port: u16) -> Option<Self> {
         let buffer = Arc::new(Mutex::new(Vec::new()));
         let buf = buffer.clone();
 
@@ -18,10 +18,12 @@ impl Inner {
             let addr = format!("0.0.0.0:{port}");
             let listener = match TcpListener::bind(&addr) {
                 Ok(l) => l,
-                Err(_) => return,
+                Err(e) => {
+                    log::error!("HTTP stream: cannot bind {addr}: {e}");
+                    return;
+                }
             };
-            eprintln!("Virtual camera: MJPEG stream at http://localhost:{port}");
-            eprintln!("(macOS has no native virtual camera API from CLI — use OBS or similar to bridge)");
+            log::info!("HTTP MJPEG stream at http://localhost:{port}");
 
             for stream in listener.incoming() {
                 let mut s = match stream { Ok(s) => s, Err(_) => continue };

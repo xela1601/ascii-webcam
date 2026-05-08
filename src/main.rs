@@ -2,7 +2,6 @@ mod camera;
 mod logging;
 mod output;
 mod render;
-mod stream;
 
 use std::fs;
 use std::io::{self, Write};
@@ -144,13 +143,13 @@ fn main() {
     let mut stdout = io::stdout();
     fs::create_dir_all(&app.capture_dir).ok();
 
-    let streamer = if args.http {
-        Some(stream::Stream::start(args.port))
+    let mut http_out = if args.http {
+        output::Output::http(args.port)
     } else {
         None
     };
 
-    let mut vcam = output::Output::start(args.v4l2_device.as_deref(), args.port);
+    let mut vcam = output::Output::v4l2(args.v4l2_device.as_deref());
 
     loop {
         if !running.load(std::sync::atomic::Ordering::SeqCst) {
@@ -189,13 +188,13 @@ fn main() {
                 stdout.flush().unwrap();
             }
 
-            if let Some(ref s) = streamer {
+            if let Some(ref mut s) = http_out {
                 s.update(&frame.rgb, frame.width, frame.height);
             }
 
             if app.output_enabled {
                 if vcam.is_none() {
-                    vcam = output::Output::start(args.v4l2_device.as_deref(), args.port);
+                    vcam = output::Output::v4l2(args.v4l2_device.as_deref());
                 }
                 if let Some(ref mut v) = vcam {
                     v.update(&frame.rgb, frame.width, frame.height);

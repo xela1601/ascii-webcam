@@ -120,6 +120,8 @@ pub fn format_msg(e: impl std::fmt::Debug) -> String {
         "No camera detected. Is one connected?"
     } else if s.contains("Permission") || s.contains("authorization") || s.contains("Not authorized") {
         "Check camera permissions."
+    } else if s.contains("lockForConfiguration") || s.contains("Lock Rejected") {
+        "Camera is locked by another app. Close other apps using the camera (FaceTime, Zoom, Photo Booth, etc.) and try again."
     } else {
         ""
     };
