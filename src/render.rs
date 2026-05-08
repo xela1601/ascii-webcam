@@ -114,14 +114,15 @@ pub fn render(
     let invert_label = if app.invert { "I" } else { " " };
     let transp_label = if transposed { "T" } else { " " };
     let bw_label = if app.bw { "B" } else { " " };
+    let v4l2_label = if app.v4l2_enabled { "V" } else { " " };
     let cam_label = format!("{orig_w}x{orig_h}");
 
     let fps_text = format!(" {fps:3} FPS ");
     let hud = format!(
         "\x1b[{hud_row};1H\x1b[48;2;30;30;30m\x1b[38;2;180;180;180m\
          {fps_text}\
-         ┃ {mirror_label}{invert_label}{transp_label}{bw_label} ┃ {cam_label} -> {render_w}x{render_h} \
-         ┃ q:quit  r:inv  m:mir  t:trn  b:bw  c:capture\
+         ┃ {mirror_label}{invert_label}{transp_label}{bw_label}{v4l2_label} ┃ {cam_label} -> {render_w}x{render_h} \
+         ┃ q:quit  r:inv  m:mir  t:trn  b:bw  s:v4l2  c:capture\
          \x1b[K\x1b[0m",
         hud_row = term_h,
     );

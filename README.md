@@ -63,6 +63,34 @@ cargo run --release
 |------|-------------|
 | `-r`, `--invert` | Start with inverted brightness |
 | `-m`, `--mirror`  | Start with horizontal mirror |
+| `-b`, `--bw`  | Start in black & white mode |
+| `--http`      | Start HTTP MJPEG stream |
+| `-p`, `--port`   | HTTP stream port (default 8080) |
+| `--v4l2 <dev>`   | Write to v4l2loopback device (Linux) |
+
+## Streaming / Virtual camera
+
+### HTTP MJPEG (`--http`)
+
+```
+ascii-webcam --http
+```
+
+Open `http://localhost:8080` in a browser, or add as a media source in OBS.
+
+### v4l2loopback — Linux (`--v4l2`)
+
+Creates a virtual camera visible in Zoom, Chrome, etc. Setup once:
+
+```
+sudo modprobe v4l2loopback devices=1 video_nr=2 card_label="ascii-webcam"
+```
+
+```
+ascii-webcam --v4l2 /dev/video2
+```
+
+The device appears as "ascii-webcam" in camera selection dialogs. Toggle with `s` key while running.
 
 ## Controls
 
@@ -72,6 +100,7 @@ cargo run --release
 | `r` | Toggle brightness invert |
 | `m` | Toggle horizontal mirror |
 | `c` | Save capture to `captures/` |
+| `s` | Toggle v4l2 virtual camera output |
 
 ## Camera permissions
 

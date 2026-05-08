@@ -32,8 +32,8 @@ struct Args {
     transpose: bool,
     #[arg(short = 'b', long, help = "Black & white mode")]
     bw: bool,
-    #[arg(short = 's', long, help = "Start HTTP MJPEG stream")]
-    stream: bool,
+    #[arg(long = "http", help = "Start HTTP MJPEG stream")]
+    http: bool,
     #[arg(short = 'p', long, help = "HTTP stream port", default_value = "8080")]
     port: u16,
     #[arg(long = "v4l2", help = "Write to v4l2loopback device (Linux only, e.g. /dev/video2)")]
@@ -45,6 +45,9 @@ struct App {
     mirror: bool,
     transpose: bool,
     bw: bool,
+    v4l2_enabled: bool,
+    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+    v4l2_device: Option<String>,
     lut: [char; 256],
     frame_count: u64,
     capture_index: u32,
@@ -73,6 +76,7 @@ fn handle_input(app: &mut App) -> bool {
                 KeyCode::Char('m') => app.mirror = !app.mirror,
                 KeyCode::Char('t') => app.transpose = !app.transpose,
                 KeyCode::Char('b') => app.bw = !app.bw,
+                KeyCode::Char('s') => app.v4l2_enabled = !app.v4l2_enabled,
                 KeyCode::Char('c') => {
                     if !app.last_frame_plain.is_empty() {
                         let path = format!(
@@ -100,6 +104,8 @@ fn main() {
         mirror: args.mirror,
         transpose: args.transpose,
         bw: args.bw,
+        v4l2_enabled: args.v4l2.is_some(),
+        v4l2_device: args.v4l2,
         lut: render::build_lut(args.invert),
         frame_count: 0,
         capture_index: 0,
@@ -120,7 +126,7 @@ fn main() {
     terminal::enable_raw_mode().unwrap();
     fs::create_dir_all(render::CAPTURE_DIR).ok();
 
-    let streamer = if args.stream {
+    let streamer = if args.http {
         Some(stream::Stream::start(args.port))
     } else {
         None
@@ -128,13 +134,6 @@ fn main() {
 
     #[cfg(target_os = "linux")]
     let mut v4l2_out: Option<v4l2::Output> = None;
-    #[cfg(not(target_os = "linux"))]
-    let _v4l2_out: Option<()> = {
-        if args.v4l2.is_some() {
-            eprintln!("--v4l2 is only supported on Linux");
-        }
-        None
-    };
 
     loop {
         let (term_cols, term_rows) = terminal::size().unwrap_or((80, 24));
@@ -151,13 +150,17 @@ fn main() {
             }
 
             #[cfg(target_os = "linux")]
-            if let Some(dev) = &args.v4l2 {
-                if v4l2_out.is_none() {
-                    v4l2_out = v4l2::Output::open(dev, frame.width, frame.height).ok();
+            if app.v4l2_enabled {
+                if let Some(dev) = &app.v4l2_device {
+                    if v4l2_out.is_none() {
+                        v4l2_out = v4l2::Output::open(dev, frame.width, frame.height).ok();
+                    }
+                    if let Some(ref mut v) = v4l2_out {
+                        let _ = v.write(&frame.rgb);
+                    }
                 }
-                if let Some(ref mut v) = v4l2_out {
-                    let _ = v.write(&frame.rgb);
-                }
+            } else {
+                v4l2_out = None;
             }
         }
 
