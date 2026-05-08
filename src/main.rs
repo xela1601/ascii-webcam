@@ -156,7 +156,7 @@ fn main() {
                         v4l2_out = v4l2::Output::open(dev, frame.width, frame.height).ok();
                     }
                     if let Some(ref mut v) = v4l2_out {
-                        let _ = v.write(&frame.rgb);
+                        let _ = v.write_frame(&frame.rgb);
                     }
                 }
             } else {

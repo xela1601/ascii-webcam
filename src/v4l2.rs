@@ -1,14 +1,14 @@
 #![cfg(target_os = "linux")]
 
-use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::{self, Write};
 use std::os::unix::io::AsRawFd;
 
-// Minimal v4l2 definitions for writing to v4l2loopback
 const VIDIOC_S_FMT: libc::c_ulong = 0xC0505605;
+const VIDIOC_STREAMON: libc::c_ulong = 0x40045612;
 const V4L2_BUF_TYPE_VIDEO_OUTPUT: u32 = 2;
 const V4L2_FIELD_NONE: u32 = 0;
-const V4L2_PIX_FMT_RGB24: u32 = 0x33524742; // "RGB3"
+const V4L2_PIX_FMT_RGB24: u32 = 0x33524742;
 
 #[repr(C)]
 #[derive(Default)]
@@ -35,12 +35,22 @@ struct V4l2PixFormat {
 }
 
 pub struct Output {
-    file: File,
+    file: std::fs::File,
+    fd: std::os::fd::RawFd,
+}
+
+impl Drop for Output {
+    fn drop(&mut self) {
+        let typ = V4L2_BUF_TYPE_VIDEO_OUTPUT;
+        unsafe {
+            libc::ioctl(self.fd, 0x40045613, &typ);
+        }
+    }
 }
 
 impl Output {
     pub fn open(device: &str, width: u32, height: u32) -> io::Result<Self> {
-        let file = File::create(device)?;
+        let file = OpenOptions::new().write(true).open(device)?;
         let fd = file.as_raw_fd();
 
         let fmt = V4l2Format {
@@ -56,15 +66,19 @@ impl Output {
             },
         };
 
-        let ret = unsafe { libc::ioctl(fd, VIDIOC_S_FMT, &fmt) };
-        if ret != 0 {
+        if unsafe { libc::ioctl(fd, VIDIOC_S_FMT, &fmt) } != 0 {
             return Err(io::Error::last_os_error());
         }
 
-        Ok(Output { file })
+        let typ = V4L2_BUF_TYPE_VIDEO_OUTPUT;
+        if unsafe { libc::ioctl(fd, VIDIOC_STREAMON, &typ) } != 0 {
+            return Err(io::Error::last_os_error());
+        }
+
+        Ok(Output { file, fd })
     }
 
-    pub fn write(&mut self, rgb: &[u8]) -> io::Result<()> {
+    pub fn write_frame(&mut self, rgb: &[u8]) -> io::Result<()> {
         self.file.write_all(rgb)
     }
 }
