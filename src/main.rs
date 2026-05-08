@@ -123,8 +123,13 @@ fn main() {
     };
 
     let mut stdout = io::stdout();
-    execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide).unwrap();
-    terminal::enable_raw_mode().unwrap();
+    let has_tty = execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide).is_ok()
+        && terminal::enable_raw_mode().is_ok();
+
+    if !has_tty {
+        log::warn!("no TTY — running headless (stream only)");
+    }
+
     fs::create_dir_all(&app.capture_dir).ok();
 
     let streamer = if args.http {
@@ -141,9 +146,11 @@ fn main() {
         let term_h = term_rows as u32;
 
         if let Some(frame) = camera.next_frame() {
-            let rendered = render::render(&frame.rgb, frame.width, frame.height, &mut app, term_w, term_h);
-            write!(stdout, "{}", rendered.ansi).unwrap();
-            stdout.flush().unwrap();
+            if has_tty {
+                let rendered = render::render(&frame.rgb, frame.width, frame.height, &mut app, term_w, term_h);
+                write!(stdout, "{}", rendered.ansi).unwrap();
+                stdout.flush().unwrap();
+            }
 
             if let Some(ref s) = streamer {
                 s.update(&frame.rgb, frame.width, frame.height);
@@ -161,9 +168,11 @@ fn main() {
             }
         }
 
-        if !handle_input(&mut app) {
-            cleanup();
-            return;
+        if has_tty {
+            if !handle_input(&mut app) {
+                cleanup();
+                return;
+            }
         }
 
         std::thread::sleep(FRAME_SLEEP);
