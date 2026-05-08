@@ -8,7 +8,22 @@ pub const CHAR_ASPECT: f64 = 0.5;
 pub const CHAR_PX_W: u32 = 10;
 pub const CHAR_PX_H: u32 = 20;
 
-const FONT_DATA: &[u8] = include_bytes!("../assets/ProggyClean.ttf");
+fn load_font() -> Vec<u8> {
+    let paths = [
+        "/System/Library/Fonts/Supplemental/Courier New.ttf",
+        "/System/Library/Fonts/Menlo.ttc",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+        "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
+    ];
+    for path in &paths {
+        if let Ok(data) = std::fs::read(path) {
+            log::info!("using font: {path}");
+            return data;
+        }
+    }
+    log::warn!("no font found, using fallback");
+    Vec::new()
+}
 const FONT_SIZE: f32 = 18.0;
 
 struct Glyph {
@@ -19,8 +34,11 @@ struct Glyph {
 }
 
 fn build_glyphs() -> HashMap<char, Glyph> {
-    let font = Font::from_bytes(FONT_DATA, fontdue::FontSettings::default())
-        .expect("failed to load embedded font");
+    let data = load_font();
+    if data.is_empty() {
+        return HashMap::new();
+    }
+    let font = Font::from_bytes(data.as_slice(), fontdue::FontSettings::default()).unwrap();
     let mut map = HashMap::new();
     for ch in GSCALE.chars() {
         if map.contains_key(&ch) { continue; }
